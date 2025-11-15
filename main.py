@@ -65,11 +65,13 @@ class Aplicativo(tk.Tk):
 
         ttk.Label(lateral, text="📘 Menu de Tópicos", style='MenuTitle.TLabel').pack(pady=(80, 40))
 
+        # mudança nos nomes dos tópicos 2 e 4, de maneira que seguissem o "formato":
+        # título (tipo de método utilizado)
         botoes = [
             ("Tópico 1 - Sistemas Lineares (Direto)", self.topico1),
-            ("Tópico 2 - Gauss-Seidel (Wheatstone)", self.topico2),
+            ("Tópico 2 - Ponte de Wheatstone (Gauss-Siedel)", self.topico2),
             ("Tópico 3 - Lei de Moore (Regressão)", self.topico3),
-            ("Tópico 4 - Integração Numérica", self.topico4)
+            ("Tópico 4 - Integração Numérica (Trapézio e Simpson repetidas)", self.topico4)
         ]
 
         for txt, cmd in botoes:
@@ -183,6 +185,7 @@ class Aplicativo(tk.Tk):
                         font=("TkDefaultFon", 10))
         saida.pack(fill=tk.X, pady=10)
 
+        # Construção do sistema por meio do método das correntes nas malhas
         def construir_sistema(Ev, R1v, Rv):
             R2 = R3 = R4 = R5 = Rv
             A = np.array([
@@ -212,20 +215,14 @@ class Aplicativo(tk.Tk):
                 saida.delete(1.0, tk.END)
                 saida.insert(tk.END, f"Solução em {it} iterações:\n")
                 saida.insert(tk.END, "--------------------------------\n")
-                # O solver encontra as 3 correntes de malha (ia, ib, ic)
-                ia = sol[0]  # Corresponde à malha i1 (BACEB)
-                ib = sol[1]  # Corresponde à malha i2 (BDAB)
-                ic = sol[2]  # Corresponde à malha i3 (CDAC)
+                # a solução do sistema são as três correntes de malha ia (malha que contém a fonte de tensão), ib (triângulo superior da ponte),
+                # ic (triângulo inferior da ponte)
+                ia = sol[0]
+                ib = sol[1]
+                ic = sol[2]
 
-                # Cálculo das correntes solicitadas
-                i1 = ia - ib
-                i2 = ib
-                i3 = ic
-                i4 = ia - ic
-                i5 = ic - ib
-                i6 = ia
-
-                correntes_calculadas = [i1, i2, i3, i4, i5, i6]
+                # cálculo das correntes "finais" com base nas correntes nas malhas
+                correntes_calculadas = [ia - ib, ib, ic, ia - ic, ic - ib, ia]
 
                 saida.insert(tk.END, "--- Incógnitas resolvidas (Correntes de Malha) ---\n")
                 saida.insert(tk.END, f"ia (malha 1) = {ia:.6f} A\n")
@@ -238,9 +235,6 @@ class Aplicativo(tk.Tk):
                 for i, val in enumerate(correntes_calculadas):
                     saida.insert(tk.END, f"Corrente i{i + 1} = {val:.6f} A\n")
                 saida.insert(tk.END, "--------------------------------\n")
-
-                # Pergunta no final (usando messagebox para este tópico)
-                messagebox.showinfo("Sucesso", "Cálculo concluído. Deseja realizar um novo cálculo para o Tópico 2?")
 
             except Exception as e:
                 messagebox.showerror("Erro", str(e))
