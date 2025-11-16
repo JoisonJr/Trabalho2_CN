@@ -106,24 +106,26 @@ class Aplicativo(tk.Tk):
         quadro = ttk.Frame(self.area_principal)
         quadro.pack(pady=8)
         entradas = [[ttk.Entry(quadro, width=10) for _ in range(3)] for _ in range(3)]
+        # definição das entradas na grade do aplicativo
         for i, linha in enumerate(entradas):
             for j, e in enumerate(linha):
                 e.grid(row=i, column=j, padx=4, pady=4)
-
+        # valores padrão para os limites
         rhs_vars = [tk.StringVar(value=v) for v in ("4800", "5800", "5700")]
         frame_rhs = ttk.Frame(self.area_principal)
         frame_rhs.pack(pady=6)
         ttk.Label(frame_rhs, text="Necessidades (areia, fino, grosso): ").pack(side=tk.LEFT)
+        # entradas para a matriz coluna b
         rhs_entradas = [ttk.Entry(frame_rhs, width=8, textvariable=v) for v in rhs_vars]
         for e in rhs_entradas:
             e.pack(side=tk.LEFT, padx=3)
-
+        # criação da caixa de texto da saída
         saida = tk.Text(self.area_principal, height=6, bg="#2A2A2A", fg="white", relief="ridge",
                         font=("TkDefaultFon", 10))
         saida.pack(fill=tk.X, pady=8)
 
+        # dá a opção de utilizaro exemplo já presente no tópico
         def preencher_exemplo():
-            # Exemplo ajustado para o Problema 3 da atividade (proporções em decimal)
             exemplo = [[0.55, 0.25, 0.25], [0.30, 0.45, 0.20], [0.15, 0.30, 0.55]]
             for i in range(3):
                 for j in range(3):
@@ -132,13 +134,17 @@ class Aplicativo(tk.Tk):
 
         def resolver():
             try:
+                # lê os valores de ambos os vetores e os converte para as matrizes A e B
                 A = [[float(entradas[i][j].get()) for j in range(3)] for i in range(3)]
                 b = [float(e.get()) for e in rhs_entradas]
+                # resolução de Ax=b pelo método direto, como está presente em metodos.py
                 x = resolver_sistema_direto(A, b)
                 saida.delete(1.0, tk.END)
+                # exibe os resultados
                 for i, xi in enumerate(x):
                     saida.insert(tk.END, f"Mina {i + 1}: {xi:.2f} m³\n")
             except Exception as e:
+                # mensagem de erro
                 messagebox.showerror("Erro", str(e))
 
         botoes = ttk.Frame(self.area_principal)
@@ -209,8 +215,9 @@ class Aplicativo(tk.Tk):
                         messagebox.showwarning("Atenção",
                                                "A matriz não é estritamente diagonal dominante. A convergência não é garantida.")
                         break
-
+                # estimativa inicial
                 x0 = [b[i] / A[i, i] for i in range(3)]
+                # array das soluções e número de iterações
                 sol, it = metodo_gauss_seidel(A, b, x0=x0, tol=tol.get())
                 saida.delete(1.0, tk.END)
                 saida.insert(tk.END, f"Solução em {it} iterações:\n")
@@ -257,7 +264,7 @@ class Aplicativo(tk.Tk):
                                            "O *gráfico mostra o ajuste* e as previsões para os anos indicados.",
                                       style='Instruction.TLabel')
         instruction_label.pack(pady=5)
-
+        # predefinição dos anos e dos transistores
         anos = [1971, 1974, 1978, 1982, 1985, 1989, 1993, 1997, 1999, 2002, 2006, 2008]
         trans = [2300, 6000, 29000, 120000, 275000, 1180000, 3100000, 7500000,
                  24000000, 220000000, 291000000, 2300000000]
@@ -273,7 +280,7 @@ class Aplicativo(tk.Tk):
         ttk.Label(frame_tabela, text="Nº de Transistores (N)", font=("Segoe UI", 11, "bold"), width=20).grid(row=0,
                                                                                                              column=1,
                                                                                                              pady=2)
-
+        # entradas das quantidades de transistores e seus respectivos anos
         entradas = []
         for i in range(len(anos)):
             e1 = ttk.Entry(frame_tabela, width=12)
@@ -292,6 +299,7 @@ class Aplicativo(tk.Tk):
         ttk.Label(frame_previsao, text="Anos para previsão (separados por vírgula):").pack(pady=5)
         ttk.Entry(frame_previsao, textvariable=anos_prev, width=25).pack(pady=4)
 
+        # criação da caixa de texto para a saída
         saida = tk.Text(self.area_principal, height=6, bg="#2A2A2A", fg="white", relief="ridge",
                         font=("TkDefaultFon", 10))
         saida.pack(fill=tk.X, pady=10)
@@ -304,16 +312,18 @@ class Aplicativo(tk.Tk):
 
         fig_canvas = None
 
+        # função para o ajuste/aproximação da linha
         def ajustar():
             nonlocal fig_canvas
             nonlocal instruction_label, frame_entradas, botoes
-
+            # leitura dos dados de entrada
             dados = []
             for e1, e2 in entradas:
                 if e1.get() and e2.get():
                     try:
                         ano = float(e1.get())
                         N = float(e2.get())
+                        # validação para o logaritmo, dado que não pode ser negativo
                         if N <= 0:
                             messagebox.showerror("Erro", "N deve ser maior que zero para usar log10.")
                             return
@@ -321,19 +331,23 @@ class Aplicativo(tk.Tk):
                     except:
                         messagebox.showerror("Erro", "Verifique os valores digitados.")
                         return
-
+            # validação da quantidade de pares ordenados
             if len(dados) < 2:
                 messagebox.showerror("Erro", "Insira ao menos dois pares (Ano, N).")
                 return
-
+            
+            # inserção dos dados nos vetores x e y, criando os pares ordenados
             x = np.array([d[0] for d in dados])
             y = np.array([d[1] for d in dados])
             A = np.vstack([x, np.ones_like(x)]).T
+            # resolução do sistema pelo método dos mínimos quadrados (lstsq) com uma função que já o implementa
             a, b = np.linalg.lstsq(A, y, rcond=None)[0]
 
+            # saída dos dados
             saida.delete(1.0, tk.END)
             saida.insert(tk.END, f"Ajuste obtido: log10(N) = {a:.6e} * ano + {b:.6e}\n\n")
 
+            # preenchimento dos dados das previsões
             anos_previsao = [int(a.strip()) for a in anos_prev.get().split(",") if a.strip()]
             previsoes = []
             for ano in anos_previsao:
@@ -402,6 +416,7 @@ class Aplicativo(tk.Tk):
                                       style='Instruction.TLabel')
         instruction_label.pack(pady=5)
 
+        # valores padrão para a inicialização do aplicativo
         xs = [0, 1, 2, 3, 4, 5, 6]
         ys = [0.5, 1.2, 2.3, 3.1, 2.0, 1.0, 0.4]
 
@@ -412,17 +427,17 @@ class Aplicativo(tk.Tk):
                                                                                           pady=2)
         ttk.Label(frame_inputs, text="Profundidade (y)", font=("Segoe UI", 11, "bold")).grid(row=0, column=1, padx=5,
                                                                                              pady=2)
-
+        # entradas de cada par ordenado
         entradas = []
         for i in range(len(xs)):
             e1 = ttk.Entry(frame_inputs, width=15);
             e2 = ttk.Entry(frame_inputs, width=15)
-            e1.insert(0, xs[i]);
+            e1.insert(0, xs[i])
             e2.insert(0, ys[i])
             e1.grid(row=i + 1, column=0, padx=4, pady=2)
             e2.grid(row=i + 1, column=1, padx=4, pady=2)
             entradas.append((e1, e2))
-
+        # cria a caixa de texto da saída
         saida = tk.Text(self.area_principal, height=8, bg="#2A2A2A", fg="white", relief="ridge",
                         font=("TkDefaultFon", 10))
         saida.pack(fill=tk.X, pady=10)
@@ -441,11 +456,12 @@ class Aplicativo(tk.Tk):
             try:
                 x = [float(e1.get()) for e1, _ in entradas if e1.get().strip()]
                 y = [float(e2.get()) for _, e2 in entradas if e2.get().strip()]
-
+                # garante que tenham pares ordenados o suficiente para a integração
                 if len(x) != len(y) or len(x) < 2:
                     raise ValueError(
                         "Insira pelo menos 2 pares (x, y) e garanta que o número de entradas (x) e (y) é o mesmo.")
 
+                # saída para a regra do trapézio
                 area_trap = regra_trapezio(x, y)
                 saida.delete(1.0, tk.END)
                 saida.insert(tk.END, f"Área (Trapézio): {area_trap:.4f}\n")
@@ -453,6 +469,7 @@ class Aplicativo(tk.Tk):
                 try:
                     area_simp = regra_simpson(x, y)
                     saida.insert(tk.END, f"Área (Simpson): {area_simp:.4f}\n")
+                # mensagens de erro caso não tenha sido possível aplicar a regra de simpson
                 except ValueError as ve:
                     saida.insert(tk.END, f"Simpson não aplicável: {ve}\n")
                 except Exception as e:
